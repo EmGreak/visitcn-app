@@ -21,10 +21,11 @@ visitcn_app/build/
 visitcn_app/.dart_tool/
 visitcn_app/.packages
 visitcn_app/pubspec.lock
-demo/venv/
 
-# 忽略 Flutter 构建产物
+# Flutter
 *.apk
 *.ipa
 *.dill
-docs/
+
+# Demo
+demo/venv/
