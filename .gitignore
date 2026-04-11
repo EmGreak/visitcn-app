@@ -27,3 +27,4 @@ demo/venv/
 *.apk
 *.ipa
 *.dill
+docs/
