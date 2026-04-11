@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisitCN - AI China Travel Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+            padding: 24px 32px;
+            color: white;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .logo {
+            width: 56px;
+            height: 56px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #e63946;
+        }
+
+        .brand h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        .tagline {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            padding: 16px 32px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #333;
+        }
+
+        .quick-btn:hover {
+            background: #e63946;
+            color: white;
+            border-color: #e63946;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            height: 450px;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background: #fafafa;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.bot {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message.bot .avatar {
+            background: linear-gradient(135deg, #e63946, #c1121f);
+            color: white;
+        }
+
+        .message.user .avatar {
+            background: #2d3436;
+            color: white;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message.bot .bubble {
+            background: white;
+            color: #2d3436;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(135deg, #e63946, #c1121f);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble a {
+            color: #e63946;
+            text-decoration: underline;
+        }
+
+        .message.user .bubble a {
+            color: #ffcdd2;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            gap: 6px;
+            padding: 14px 18px;
+            background: white;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            width: fit-content;
+        }
+
+        .loading span {
+            width: 8px;
+            height: 8px;
+            background: #e63946;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Features Bar */
+        .features-bar {
+            padding: 16px 32px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .feature-icon {
+            font-size: 16px;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px 32px 24px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-box textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e8e8e8;
+            border-radius: 16px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            min-height: 52px;
+            max-height: 120px;
+        }
+
+        .input-box textarea:focus {
+            border-color: #e63946;
+        }
+
+        .input-box textarea::placeholder {
+            color: #aaa;
+        }
+
+        .send-btn {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #e63946, #c1121f);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Status */
+        .status {
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            color: #999;
+            background: #f8f9fa;
+        }
+
+        .status.error {
+            color: #e63946;
+            background: #ffeef0;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { border-radius: 0; }
+            .header { padding: 20px; }
+            .quick-actions { padding: 12px 20px; }
+            .chat-area { padding: 16px 20px; height: 400px; }
+            .input-area { padding: 16px 20px; }
+            .bubble { max-width: 85%; }
+            .features-bar { padding: 12px 20px; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">🇨🇳</div>
+                <div class="brand">
+                    <h1>VisitCN</h1>
+                    <p>Your AI-Powered China Travel Companion</p>
+                </div>
+            </div>
+            <div class="tagline">
+                🚀 AI智能行程规划 · 签证支付交通全覆盖 · 紧急联络一键直达
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="sendQuick('Plan a 7-day trip to Shanghai and Beijing')">🇨🇳 Plan a 7-day trip</button>
+            <button class="quick-btn" onclick="sendQuick('What payment apps do I need in China?')">💳 Payment in China</button>
+            <button class="quick-btn" onclick="sendQuick('Help me find English-speaking hospitals in Beijing')">🏥 English hospitals</button>
+            <button class="quick-btn" onclick="sendQuick('How to use Didi as a foreigner?')">🚕 How to use Didi</button>
+            <button class="quick-btn" onclick="sendQuick('Visa requirements for French citizens')">📋 Visa requirements</button>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <div class="message bot">
+                <div class="avatar">🤖</div>
+                <div class="bubble">
+                    👋 <strong>Welcome to VisitCN!</strong><br><br>
+                    I'm your AI-powered China travel assistant. I can help you plan the perfect trip across China!<br><br>
+                    <strong>Try asking me:</strong><br>
+                    • "Plan a 7-day trip to Shanghai and Beijing"<br>
+                    • "What payment apps do I need?"<br>
+                    • "How do I use Didi as a foreigner?"<br>
+                    • "Where can I find English-speaking doctors?"<br><br>
+                    What can I help you with today? 🚀
+                </div>
+            </div>
+        </div>
+
+        <div class="features-bar">
+            <div class="feature"><span class="feature-icon">🗓️</span> AI行程生成</div>
+            <div class="feature"><span class="feature-icon">💳</span> 支付指南</div>
+            <div class="feature"><span class="feature-icon">🚄</span> 交通出行</div>
+            <div class="feature"><span class="feature-icon">🎫</span> 景点推荐</div>
+            <div class="feature"><span class="feature-icon">🏥</span> 紧急联络</div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <div class="input-box">
+                    <textarea 
+                        id="userInput" 
+                        placeholder="Ask me anything about traveling in China... (e.g., 'Plan a 5-day trip to Beijing')"
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+
+        <div class="status" id="status">Ready to help 🇨🇳</div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const status = document.getElementById('status');
+
+        let isLoading = false;
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function addMessage(content, isBot = true) {
+            const msg = document.createElement('div');
+            msg.className = `message ${isBot ? 'bot' : 'user'}`;
+            msg.innerHTML = `
+                <div class="avatar">${isBot ? '🤖' : '👤'}</div>
+                <div class="bubble">${content.replace(/\n/g, '<br>')}</div>
+            `;
+            chatArea.appendChild(msg);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function showLoading() {
+            const msg = document.createElement('div');
+            msg.className = 'message bot';
+            msg.id = 'loadingMsg';
+            msg.innerHTML = `
+                <div class="avatar">🤖</div>
+                <div class="loading">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            chatArea.appendChild(msg);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loading = document.getElementById('loadingMsg');
+            if (loading) loading.remove();
+        }
+
+        function setStatus(text, isError = false) {
+            status.textContent = text;
+            status.className = isError ? 'status error' : 'status';
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text || isLoading) return;
+
+            addMessage(text, false);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            isLoading = true;
+            sendBtn.disabled = true;
+            showLoading();
+            setStatus('VisitCN is thinking... 🤔');
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await res.json();
+                removeLoading();
+
+                if (data.error) {
+                    addMessage(`⚠️ ${data.error}`, true);
+                    setStatus('Error: ' + data.error, true);
+                } else {
+                    addMessage(data.reply, true);
+                    setStatus('Ready to help 🇨🇳');
+                }
+            } catch (e) {
+                removeLoading();
+                addMessage(`❌ Network error: ${e.message}`, true);
+                setStatus('Network error!', true);
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
+            }
+        }
+
+        function sendQuick(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+    </script>
+</body>
+</html>
