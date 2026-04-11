@@ -1,0 +1,34 @@
+name: visitcn_app
+description: "VisitCN - Essential guide for foreign visitors to China"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  
+  # HTTP client for API calls
+  http: ^1.2.0
+  
+  # Environment variables
+  flutter_dotenv: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Environment file for API keys
+  assets:
+    - .env
