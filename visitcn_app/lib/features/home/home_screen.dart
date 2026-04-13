@@ -1,14 +1,35 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _selectedCity = 'Shanghai';
+  
+  final List<String> _cities = [
+    'Shanghai',
+    'Beijing',
+    'Guangzhou',
+    'Shenzhen',
+    'Hangzhou',
+    'Chengdu',
+    'Xian',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VisitCN'),
+        title: Row(
+          children: [
+            const Text('🇨🇳 ', style: TextStyle(fontSize: 24)),
+            const Text('VisitCN'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.language),
@@ -22,232 +43,378 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome Card
-            _buildWelcomeCard(context),
-            const SizedBox(height: 24),
-
-            // Quick Actions
-            Text(
-              'Quick Actions',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+            Card(
+              color: Colors.red.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.waving_hand, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Welcome to China!',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your all-in-one guide for traveling in China',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            _buildQuickActions(context),
-            const SizedBox(height: 24),
-
-            // Services
+            
+            const SizedBox(height: 16),
+            
+            // City Selector
             Text(
-              'Services',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+              '📍 Select Your City',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _cities.length,
+                itemBuilder: (context, index) {
+                  final city = _cities[index];
+                  final isSelected = city == _selectedCity;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(city),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() => _selectedCity = city);
+                      },
+                    ),
+                  );
+                },
               ),
             ),
+            
+            const SizedBox(height: 24),
+            
+            // Quick Actions Grid
+            Text(
+              '🚀 Quick Actions',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
-            _buildServicesGrid(context),
+            GridView.count(
+              crossAxisCount: 3,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                _QuickActionCard(
+                  icon: Icons.translate,
+                  label: 'Translate',
+                  color: Colors.blue,
+                  onTap: () => _showTranslateDialog(context),
+                ),
+                _QuickActionCard(
+                  icon: Icons.currency_yen,
+                  label: 'Payments',
+                  color: Colors.green,
+                  onTap: () => _navigateTo(1),
+                ),
+                _QuickActionCard(
+                  icon: Icons.directions_bus,
+                  label: 'Transport',
+                  color: Colors.orange,
+                  onTap: () => _navigateTo(3),
+                ),
+                _QuickActionCard(
+                  icon: Icons.assignment,
+                  label: 'Visa',
+                  color: Colors.purple,
+                  onTap: () => _showVisaInfo(context),
+                ),
+                _QuickActionCard(
+                  icon: Icons.local_hospital,
+                  label: 'Medical',
+                  color: Colors.red,
+                  onTap: () => _navigateTo(4),
+                ),
+                _QuickActionCard(
+                  icon: Icons.explore,
+                  label: 'Explore',
+                  color: Colors.teal,
+                  onTap: () => _showExploreInfo(context),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Tips Section
+            Text(
+              '💡 Travel Tips',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Column(
+                children: [
+                  _TipTile(
+                    icon: Icons.wifi,
+                    title: 'Stay Connected',
+                    subtitle: 'Get a local SIM card or use eSIM',
+                  ),
+                  const Divider(height: 1),
+                  _TipTile(
+                    icon: Icons.payments,
+                    title: 'Mobile Payment',
+                    subtitle: 'Alipay & WeChat Pay are essential',
+                  ),
+                  const Divider(height: 1),
+                  _TipTile(
+                    icon: Icons.tips_and_updates,
+                    title: 'Cash',
+                    subtitle: 'Some places still prefer cash',
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primaryColor, Color(0xFFFF7043)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.waving_hand, color: Colors.white, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                'Welcome to China!',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Your essential guide to navigating China as a foreign visitor.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.explore),
-            label: const Text('Explore Now'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppTheme.primaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    final actions = [
-      {'icon': Icons.chat, 'label': 'AI Assistant', 'color': AppTheme.primaryColor},
-      {'icon': Icons.payment, 'label': 'Payments', 'color': Colors.green},
-      {'icon': Icons.subway, 'label': 'Metro', 'color': AppTheme.secondaryColor},
-      {'icon': Icons.local_taxi, 'label': 'Taxi', 'color': Colors.orange},
-    ];
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: actions.map((action) {
-        return InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(12),
-          child: Column(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: (action['color'] as Color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  action['icon'] as IconData,
-                  color: action['color'] as Color,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                action['label'] as String,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildServicesGrid(BuildContext context) {
-    final services = [
-      {'icon': Icons.translate, 'title': 'Translation', 'desc': 'Real-time translation'},
-      {'icon': Icons.restaurant, 'title': 'Food Guide', 'desc': 'Chinese cuisine tips'},
-      {'icon': Icons.attractions, 'title': 'Attractions', 'desc': 'Top tourist spots'},
-      {'icon': Icons.health_and_safety, 'title': 'Healthcare', 'desc': 'Medical assistance'},
-      {'icon': Icons.sim_card, 'title': 'SIM Card', 'desc': 'Data & calling'},
-      {'icon': Icons.currency_exchange, 'title': 'Currency', 'desc': 'Exchange guide'},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final service = services[index];
-        return Card(
-          child: InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    service['icon'] as IconData,
-                    size: 32,
-                    color: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    service['title'] as String,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    service['desc'] as String,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  void _navigateTo(int index) {
+    // Navigate to tab
   }
 
   void _showLanguageDialog(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => AlertDialog(
+        title: const Text('Select Language'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LanguageOption(flag: '🇺🇸', name: 'English', code: 'en'),
+            _LanguageOption(flag: '🇨🇳', name: '中文', code: 'zh'),
+            _LanguageOption(flag: '🇯🇵', name: '日本語', code: 'ja'),
+            _LanguageOption(flag: '🇰🇷', name: '한국어', code: 'ko'),
+            _LanguageOption(flag: '🇪🇸', name: 'Español', code: 'es'),
+          ],
+        ),
       ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Select Language',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildLanguageTile('🇺🇸 English', 'English', true),
-              _buildLanguageTile('🇨🇳 中文', 'Chinese', false),
-              _buildLanguageTile('🇯🇵 日本語', 'Japanese', false),
-              _buildLanguageTile('🇰🇷 한국어', 'Korean', false),
-              _buildLanguageTile('🇪🇸 Español', 'Spanish', false),
-            ],
-          ),
-        );
-      },
     );
   }
 
-  Widget _buildLanguageTile(String flag, String name, bool selected) {
+  void _showTranslateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🌐 Quick Translate'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Type text to translate...',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Chip(label: Text('EN → CN')),
+                Chip(label: Text('CN → EN')),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {},
+            child: const Text('Translate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showVisaInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('📋 Visa Information'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Visa Types:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('• Tourist Visa (L) - Most common'),
+              Text('• Business Visa (M)'),
+              Text('• Transit Visa (G) - 144h free'),
+              SizedBox(height: 16),
+              Text('144h Transit:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Available in Shanghai, Beijing, and 20+ cities'),
+              Text('Requires onward ticket'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExploreInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🏛️ Must-Visit Places'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_selectedCity == 'Shanghai') ...[
+                _PlaceCard(name: 'The Bund', desc: 'Iconic waterfront'),
+                _PlaceCard(name: 'Yu Garden', desc: 'Classical Chinese garden'),
+                _PlaceCard(name: 'Nanjing Road', desc: 'Best shopping street'),
+                _PlaceCard(name: 'Oriental Pearl', desc: 'Famous TV tower'),
+              ] else ...[
+                _PlaceCard(name: 'Popular Attraction 1', desc: 'City landmark'),
+                _PlaceCard(name: 'Popular Attraction 2', desc: 'Cultural heritage'),
+                _PlaceCard(name: 'Popular Attraction 3', desc: 'Natural beauty'),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TipTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _TipTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.blue),
+      title: Text(title),
+      subtitle: Text(subtitle),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  final String flag;
+  final String name;
+  final String code;
+
+  const _LanguageOption({
+    required this.flag,
+    required this.name,
+    required this.code,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ListTile(
       leading: Text(flag, style: const TextStyle(fontSize: 24)),
       title: Text(name),
-      trailing: selected ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
-      onTap: () {},
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onTap: () {
+        // Change language
+        Navigator.pop(context);
+      },
+    );
+  }
+}
+
+class _PlaceCard extends StatelessWidget {
+  final String name;
+  final String desc;
+
+  const _PlaceCard({required this.name, required this.desc});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.place, color: Colors.red),
+        title: Text(name),
+        subtitle: Text(desc),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      ),
     );
   }
 }
