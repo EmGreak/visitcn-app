@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/api/minimax_client.dart';
 
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({super.key});
@@ -11,24 +12,24 @@ class _AssistantScreenState extends State<AssistantScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+  String? _errorMessage;
 
-  // Predefined quick questions
-  final List<String> _quickQuestions = [
-    'How do I use Alipay?',
-    'Where can I exchange money?',
-    'How to take subway?',
-    'Emergency numbers?',
-    'SIM card info?',
-    'Wifi hotspots?',
+  // Predefined quick questions with category icons
+  final List<QuickQuestion> _quickQuestions = [
+    QuickQuestion('Create a 3-day Shanghai itinerary', Icons.travel_explore, 'itinerary'),
+    QuickQuestion('How do I apply for a China visa?', Icons.badge, 'visa'),
+    QuickQuestion('How to use Alipay as a foreigner?', Icons.payment, 'payment'),
+    QuickQuestion('What\'s the best way from airport to city?', Icons.directions_transit, 'transport'),
+    QuickQuestion('Emergency contacts in China', Icons.emergency, 'emergency'),
+    QuickQuestion('SIM card options for tourists', Icons.sim_card, 'sim'),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Add welcome message
     _messages.add(ChatMessage(
       isUser: false,
-      message: 'Hello! I\'m your VisitCN AI assistant. How can I help you today?',
+      message: '👋 Welcome to VisitCN!\n\nI\'m your AI travel assistant for China. Tell me what you need:\n\n• 📅 Itinerary planning\n• 🛂 Visa guidance\n• 💳 Payment setup\n• 🚇 Transportation\n• 🏥 Emergency help\n• 🍜 Food recommendations',
       time: DateTime.now(),
     ));
   }
@@ -45,33 +46,64 @@ class _AssistantScreenState extends State<AssistantScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _messages.clear();
-                _messages.add(ChatMessage(
-                  isUser: false,
-                  message: 'Hello! How can I help you today?',
-                  time: DateTime.now(),
-                ));
-              });
-            },
-          ),
+          if (_messages.length > 1)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'New conversation',
+              onPressed: () {
+                setState(() {
+                  _messages.clear();
+                  _messages.add(ChatMessage(
+                    isUser: false,
+                    message: '👋 Let\'s start fresh! How can I help you?',
+                    time: DateTime.now(),
+                  ));
+                  _errorMessage = null;
+                });
+              },
+            ),
         ],
       ),
       body: Column(
         children: [
-          // Quick questions
+          // Error banner
+          if (_errorMessage != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              color: Colors.red.shade100,
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () => setState(() => _errorMessage = null),
+                  ),
+                ],
+              ),
+            ),
+
+          // Quick questions (only show when conversation is short)
           if (_messages.length <= 2)
             Container(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Quick Questions:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  Text(
+                    'Try these:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -79,15 +111,16 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     runSpacing: 8,
                     children: _quickQuestions.map((q) {
                       return ActionChip(
-                        label: Text(q, style: const TextStyle(fontSize: 11)),
-                        onPressed: () => _sendMessage(q),
+                        avatar: Icon(q.icon, size: 14),
+                        label: Text(q.text, style: const TextStyle(fontSize: 11)),
+                        onPressed: () => _sendMessage(q.text, category: q.category),
                       );
                     }).toList(),
                   ),
                 ],
               ),
             ),
-          
+
           // Chat messages
           Expanded(
             child: ListView.builder(
@@ -99,25 +132,28 @@ class _AssistantScreenState extends State<AssistantScreen> {
               },
             ),
           ),
-          
+
           // Loading indicator
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8),
+            Container(
+              padding: const EdgeInsets.all(12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
-                  SizedBox(width: 8),
-                  Text('AI is thinking...'),
+                  const SizedBox(width: 12),
+                  const Text('VisitCN AI is thinking...'),
                 ],
               ),
             ),
-          
+
           // Input area
           Container(
             padding: const EdgeInsets.all(12),
@@ -138,21 +174,22 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Type your question...',
+                        hintText: 'Ask me anything about traveling in China...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 8,
+                          vertical: 12,
                         ),
                       ),
-                      onSubmitted: _sendMessage,
+                      onSubmitted: (text) => _sendMessage(text),
+                      textInputAction: TextInputAction.send,
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: () => _sendMessage(_controller.text),
+                    onPressed: _isLoading ? null : () => _sendMessage(_controller.text),
                     icon: const Icon(Icons.send),
                   ),
                 ],
@@ -164,7 +201,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     );
   }
 
-  void _sendMessage(String text) {
+  Future<void> _sendMessage(String text, {String? category}) async {
     if (text.trim().isEmpty) return;
 
     // Add user message
@@ -176,11 +213,20 @@ class _AssistantScreenState extends State<AssistantScreen> {
       ));
       _controller.clear();
       _isLoading = true;
+      _errorMessage = null;
     });
 
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 1), () {
-      final response = _getAIResponse(text);
+    try {
+      // Build messages for API
+      final userText = category != null
+          ? '[${category.toUpperCase()}] $text'
+          : text;
+      
+      final apiMessages = MiniMaxClient.buildTravelAssistantMessages(userText);
+      
+      // Call MiniMax API
+      final response = await MiniMaxClient.chat(messages: apiMessages);
+
       setState(() {
         _messages.add(ChatMessage(
           isUser: false,
@@ -189,127 +235,28 @@ class _AssistantScreenState extends State<AssistantScreen> {
         ));
         _isLoading = false;
       });
-    });
-  }
-
-  String _getAIResponse(String question) {
-    final q = question.toLowerCase();
-    
-    if (q.contains('alipay') || q.contains('payment')) {
-      return '''To use Alipay in China:
-
-1. **Download Alipay** app from App Store
-2. **Link your card** (Visa/Mastercard accepted)
-3. **Verify identity** with passport
-
-**Usage:**
-- Scan QR codes to pay
-- Show your payment code at stores
-- Works everywhere in China
-
-Need more details?''';
-    } else if (q.contains('money') || q.contains('exchange')) {
-      return '''**Currency Exchange Options:**
-
-1. **Airport** - Available but limited hours, poor rates
-
-2. **Banks** - ICBC, BOC, CCB offer better rates
-   - Bring passport
-   - Higher minimum amounts
-
-3. **ATMs** - Global ATMs everywhere
-   - Accept foreign cards
-   - Best rates usually
-
-4. ** hotels** - Convenient but poor rates
-
-**Tip:** Exchange small amount at airport, rest at bank for better rates.''';
-    } else if (q.contains('subway') || q.contains('metro') || q.contains('transport')) {
-      return '''**Using Subway in $_getCityName():**
-
-1. **Get a transit card** at any station
-   - ¥20 deposit required
-   - Refill at machines
-
-2. **Or use mobile payment:**
-   - Alipay/WeChat Metro card
-   - Bank card with NFC
-
-3. **Signs are bilingual:**
-   - Chinese + English
-   - Color-coded lines
-
-4. **Tips:**
-   - Peak hours: 8-9am, 5-7pm
-   - Don't miss last train (usually 10-11pm)
-
-Want directions to specific place?''';
-    } else if (q.contains('emergency') || q.contains('hospital')) {
-      return '''**Emergency Contacts in China:**
-
-🚨 **Emergency Numbers:**
-- Police: 110
-- Ambulance: 120
-- Fire: 119
-
-**Nearest Hospital:**
-Search "International Hospital" in your area for English-speaking staff.
-
-**Tip:** Keep your passport and insurance info handy.''';
-    } else if (q.contains('sim') || q.contains('phone') || q.contains('card')) {
-      return '''**Getting a SIM Card in China:**
-
-**Options:**
-1. **eSIM** (if supported)
-   - China Unicom, China Mobile
-   - Buy online before arrival
-
-2. **Physical SIM**
-   - At airport upon arrival
-   - Bring passport
-   - Choose: China Mobile/Unicom/Telecom
-
-**Data Plans:**
-- ¥30-50/month for 10GB+
-- Tourist packages available
-
-**Documents needed:**
-- Passport
-- Local address (hotel OK)''';
-    } else if (q.contains('wifi') || q.contains('internet')) {
-      return '''**Staying Connected in China:**
-
-**Free WiFi:**
-- Hotels (password provided)
-- Cafes (Starbucks, etc.)
-- Airports, stations
-
-**Mobile Data (Recommended):**
-- Get local SIM or eSIM
-- Or rent a pocket WiFi
-
-**Note:** Google, Facebook, YouTube blocked
-- Use VPN for these
-- WeChat works fine without VPN''';
-    } else {
-      return '''Thanks for your question about "$question"!
-
-I can help you with:
-- 💳 Payments & Money
-- 🚇 Transportation
-- 📋 Visa & Documents
-- 🏥 Medical & Emergency
-- 📱 SIM & Internet
-- 🏛️ Attractions & Tips
-
-Please rephrase or choose a topic above!''';
+    } catch (e) {
+      setState(() {
+        _messages.add(ChatMessage(
+          isUser: false,
+          message: '⚠️ Sorry, I couldn\'t connect to the AI service right now.\n\n'
+              'Please try again in a moment, or check your internet connection.\n\n'
+              'Error: ${e.toString()}',
+          time: DateTime.now(),
+        ));
+        _isLoading = false;
+        _errorMessage = 'Connection failed: ${e.toString()}';
+      });
     }
   }
+}
 
-  String _getCityName() {
-    // This would come from state in real app
-    return 'Shanghai';
-  }
+class QuickQuestion {
+  final String text;
+  final IconData icon;
+  final String category;
+
+  QuickQuestion(this.text, this.icon, this.category);
 }
 
 class ChatMessage {
@@ -337,32 +284,35 @@ class _ChatBubble extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
         decoration: BoxDecoration(
-          color: message.isUser ? Colors.blue : Colors.grey.shade200,
+          color: message.isUser
+              ? Theme.of(context).primaryColor
+              : Colors.grey.shade100,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(message.isUser ? 16 : 4),
-            bottomRight: Radius.circular(message.isUser ? 4 : 16),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(message.isUser ? 18 : 6),
+            bottomRight: Radius.circular(message.isUser ? 6 : 18),
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            SelectableText(
               message.message,
               style: TextStyle(
                 color: message.isUser ? Colors.white : Colors.black87,
+                height: 1.4,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               '${message.time.hour}:${message.time.minute.toString().padLeft(2, '0')}',
               style: TextStyle(
                 fontSize: 10,
-                color: message.isUser ? Colors.white70 : Colors.black45,
+                color: message.isUser ? Colors.white60 : Colors.black38,
               ),
             ),
           ],
